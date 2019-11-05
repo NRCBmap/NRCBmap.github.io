@@ -1,0 +1,1 @@
+{"states":[["name", "xPos", "yPos"], ["..."]], "provinces":[["name", "xPos", "yPos", "terrainType"], ["..."]], "roads":[["type", "province1", "province2"]]}

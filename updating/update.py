@@ -1,11 +1,12 @@
 import json
-dataJSON = {}
+dataJSON = [];
 
 def getData():
+    global dataJSON
     txtFile = open("data.txt", "r")
-    dataJSON = json.loads(txtFile.read())
-    print(txtFile.read())
+    dataText = txtFile.read()
     txtFile.close()
+    dataJSON = json.loads(dataText)
 
 getData()
 print(dataJSON)
