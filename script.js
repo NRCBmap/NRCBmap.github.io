@@ -16,7 +16,7 @@ function renderProvinces(Provinces) {
 
 
 function preload() {
-  mapImg = loadImage('map.png');
+  mapImg = loadImage('Map.png');
 }
 
 function setup() { // p5 setup
