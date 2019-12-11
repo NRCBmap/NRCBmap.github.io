@@ -169,17 +169,17 @@ function mouseMoved() {
 }
 
 function mouseWheel(event) {
-  // print(event.delta);
+  // console.log(event.delta);
   if (event.delta > 0) {
     if (zoom > 0.1) {
-      var factor = 1-(1/10)
+      var factor = 1-(event.delta/500)
       zoom = zoom * factor
       camX = (camX-mouseX) * factor + mouseX
       camY = (camY-mouseY) * factor + mouseY
     }
   } else {
     if (zoom < 50) {
-      var factor = 1+(1/10)
+      var factor = 1-(event.delta/500)
       zoom = zoom * factor
       camX = (camX-mouseX) * factor + mouseX
       camY = (camY-mouseY) * factor + mouseY
