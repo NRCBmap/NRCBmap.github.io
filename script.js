@@ -6,31 +6,79 @@ function renderContinentNames() {
   if (stateData.length == 0) {
     return;
   }
+  var infoText = "";
   if (zoom < CONTINENT_MAX_ZOOM) {
     fill(255)
     textSize(CONTINENT_TEXT_SIZE);
     strokeWeight(CONTINENT_TEXT_SIZE/5);
     stroke(0);
+    textAlign(CENTER,CENTER);
+    var closestI = 0;
+    var closestDist = Infinity;
     for (var i = 0; i < stateData.continents.length; i++) {
       text(stateData.continents[i].name, stateData.continents[i].x, stateData.continents[i].y)
+      var nowDist = dist(onMapMousePos[0], onMapMousePos[1], stateData.continents[i].x, stateData.continents[i].y)
+      if (nowDist < closestDist) {
+        closestDist = nowDist;
+        closestI = i;
+      }
     }
+    var continent = stateData.continents[closestI]
+    infoText += "name: " + continent.name + "\n"
+    infoText += "id: " + continent.id.toString() + "\n"
   } else if (zoom < STATE_MAX_ZOOM) {
     fill(255)
     textSize(STATE_TEXT_SIZE);
     strokeWeight(STATE_TEXT_SIZE/5);
     stroke(0);
+    textAlign(CENTER,CENTER);
+    var closestI = 0;
+    var closestDist = Infinity;
     for (var i = 0; i < stateData.states.length; i++) {
-      text(stateData.states[i].name + "\nid: " + stateData.states[i].id.toString(), stateData.states[i].x, stateData.states[i].y)
+      text(stateData.states[i].name, stateData.states[i].x, stateData.states[i].y)
+      var nowDist = dist(onMapMousePos[0], onMapMousePos[1], stateData.states[i].x, stateData.states[i].y)
+      if (nowDist < closestDist) {
+        closestDist = nowDist;
+        closestI = i;
+      }
+    }
+    var state = stateData.states[closestI];
+    infoText += "name: " + state.name + "\n";
+    infoText += "id: " + state.id.toString() + "\n";
+    for (var i = 0; i < stateData.continents.length; i++) {
+      if (stateData.continents[i].id == state.parentID) {
+        infoText += "continent: " + stateData.continents[i].name + "\n";
+      }
     }
   } else {
     fill(255)
     textSize(PROVINCE_TEXT_SIZE);
     strokeWeight(PROVINCE_TEXT_SIZE/5);
     stroke(0);
+    textAlign(CENTER,CENTER);
+    var closestI = 0;
+    var closestDist = Infinity;
     for (var i = 0; i < stateData.provinces.length; i++) {
-      text(stateData.provinces[i].name + "\nid: " + stateData.provinces[i].id.toString(), stateData.provinces[i].x, stateData.provinces[i].y)
+      text(stateData.provinces[i].name, stateData.provinces[i].x, stateData.provinces[i].y)
+      var nowDist = dist(onMapMousePos[0], onMapMousePos[1], stateData.provinces[i].x, stateData.provinces[i].y)
+      if (nowDist < closestDist) {
+        closestDist = nowDist;
+        closestI = i;
+      }
+    }
+    var province = stateData.provinces[closestI];
+    infoText += "name: " + province.name + "\n";
+    infoText += "id: " + province.id.toString() + "\n";
+    for (var i = 0; i < stateData.states.length; i++) {
+      if (stateData.states[i].id == province.parentID) {
+        infoText += "state: " + stateData.states[i].name + "\n";
+      }
     }
   }
+  textAlign(LEFT, TOP)
+  textSize(50/zoom)
+  strokeWeight(50/zoom/5)
+  text(infoText,-camX/zoom,-camY/zoom);
 }
 
 function makeName() {
@@ -65,7 +113,6 @@ function setup() { // p5 setup
   background(255);
   noSmooth();
   noLoop();
-  textAlign(CENTER,CENTER);
   strokeJoin(ROUND)
 
   redraw();
