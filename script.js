@@ -142,7 +142,7 @@ function keyPressed() {
   //     for (var i = 0; i < stateData[conStaProNames[type-1]].length; i++) {
   //       parentstr += stateData[conStaProNames[type-1]][i].name + ": " + stateData[conStaProNames[type-1]][i].id.toString() + "\n";
   //     }
-  //     var parent = prompt(parentstr,8)
+  //     var parent = prompt(parentstr,10)
   //     stateData[conStaProNames[type]].push({"name":name, "x":onMapMousePos[0], "y":onMapMousePos[1], "id":stateData[conStaProNames[type]].length, "parentID":parseInt(parent)})
   //     newStuffText += ',{"name":"' + name + '","x":' + onMapMousePos[0].toString() + ',"y":' + onMapMousePos[1].toString() + ',"id":' + stateData[conStaProNames[type]].length.toString() + ',"parentID":'+ parent + '}'
   //     console.log(newStuffText);
