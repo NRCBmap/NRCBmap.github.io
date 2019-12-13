@@ -9,6 +9,7 @@ var stateData = [];
 
 var url = "https://codemaker4.github.io/NRCBmap/data.json";
 // var url = "http://127.0.0.1:8000/data.json";
+// var url = "someNonExistantUrl";
 
 var jsonFile = new XMLHttpRequest();
     jsonFile.open("GET",url,true);

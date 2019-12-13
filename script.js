@@ -58,7 +58,7 @@ function renderContinentNames() {
   stroke(0);
   textAlign(CENTER,CENTER);
   if (stateData.length == 0) {
-    infoText = "loading data...";
+    infoText = "loading data...\nplease notify\n@codemaker4\nif this takes more than \na few seconds.\n";
   } else if (zoom < CONTINENT_MAX_ZOOM) {
     zoomType = 0;
     textSize(CONTINENT_TEXT_SIZE);
@@ -111,9 +111,13 @@ function renderContinentNames() {
     infoText += "state: " + findID("states", province.parentID).name + "\n";
     infoText += "nation: " + getNationInf(province.natOwned).name + "\n";
   }
-  textAlign(LEFT, TOP)
-  textSize(50/zoom)
-  strokeWeight(50/zoom/5)
+  fill(0,0,0,150);
+  rectMode(CORNER);
+  strokeWeight(0)
+  rect(-camX/zoom,-camY/zoom,500/zoom,60*(infoText.split("\n").length-1)/zoom);
+  textAlign(LEFT, TOP);
+  textSize(50/zoom);
+  strokeWeight(50/zoom/5);
   fill(255);
   text(infoText,-camX/zoom,-camY/zoom);
 }
