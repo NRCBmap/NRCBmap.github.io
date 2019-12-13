@@ -164,11 +164,11 @@ function infrastructure(id1) {
       tempMouseReleased = undefined;
       return;
     }
-    if (findID("provinces", infrastructureId1).natOwned == 1 || findID("provinces", infrastructureId2).natOwned == 1) {
-      alert("one or both of the provinces are not owned by anyone. Cancelled")
-      tempMouseReleased = undefined;
-      return;
-    }
+    // if (findID("provinces", infrastructureId1).natOwned == 1 || findID("provinces", infrastructureId2).natOwned == 1) {
+    //   alert("one or both of the provinces are not owned by anyone. Cancelled")
+    //   tempMouseReleased = undefined;
+    //   return;
+    // }
     var actionCode = "infrastructure;" + getNationInf(findID("provinces", infrastructureId1).natOwned).name + ";" + infrastructureId1.toString() + ";" + infrastructureId2.toString() + ";" + infrastructureType + ";" + ((infrastructureId1+infrastructureId2)%7).toString();
     prompt("copy this code in the #nrmap-codes channel in the discord server.", actionCode)
     tempMouseReleased = undefined;
