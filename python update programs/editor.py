@@ -14,6 +14,16 @@ def loadData():
     jsonData = json.loads(file.read())
     file.close()
 
+def saveData(argument):
+    if input("backup? y/n") != "n":
+        backup()
+    else:
+        print("No backup done.")
+    file = open("data.json", "w")
+    file.write(json.dumps(jsonData))
+    file.close()
+    return "done."
+
 def checkIdInList(id, listToCheck):
     for i in range(len(listToCheck)):
         if str(listToCheck[i]["id"]) == str(id):
@@ -165,7 +175,7 @@ def cmd_tree(argument):
     strToReturn += getStrStructure(getCurrentPath(), depth, 0)
     return strToReturn
 
-commands = {"cd":cmd_cd, "findDict":cmd_findDict, "backup":cmd_backup, "edit": cmd_edit, "tree": cmd_tree}
+commands = {"cd":cmd_cd, "findDict":cmd_findDict, "backup":cmd_backup, "edit": cmd_edit, "tree": cmd_tree, "save": saveData}
 
 loadData()
 
