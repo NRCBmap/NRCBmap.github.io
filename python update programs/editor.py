@@ -100,6 +100,7 @@ def cmd_cd(argument):
     returnStr = getStrStructure(getCurrentPath(), 1, 0)
     if len(path) >= 1:
         returnStr = path[-1] + "\n" + returnStr
+    returnStr = ""
     return returnStr
 
 def cmd_findDict(argument):
