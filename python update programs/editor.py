@@ -54,21 +54,21 @@ def getStrStructure(dictionary, depth, indent):
     if isinstance(dictionary, dict):
         for i in dictionary.keys():
             if not (isinstance(dictionary[i], list) or isinstance(dictionary[i], dict)):
-                stringToReturn += "  "*max(indent, 0) + "|-" + str(i) + ": " + str(dictionary[i]) + "\n"
+                stringToReturn += "| "*max(indent, 0) + "|-" + str(i) + ": " + str(dictionary[i]) + "\n"
             elif depth > 1:
-                stringToReturn += "  "*max(indent, 0) + "|-. " + str(i) + ": \n"
+                stringToReturn += "| "*max(indent, 0) + "|-. " + str(i) + ": \n"
                 stringToReturn += getStrStructure(dictionary[i], depth-1, indent+1)
             else:
-                stringToReturn += "  "*max(indent, 0) + "|-" + str(i) + "\n"
+                stringToReturn += "| "*max(indent, 0) + "|-" + str(i) + "\n"
     elif isinstance(dictionary, list):
         for i in range(len(dictionary)):
             if depth > 1:
-                stringToReturn += "  "*max(indent, 0) + "|-. " + str(dictionary[i]["id"]) + ": \n"
+                stringToReturn += "| "*max(indent, 0) + "|-. " + str(dictionary[i]["id"]) + ": \n"
                 stringToReturn += getStrStructure(dictionary[i], depth-1, indent+1)
             else:
-                stringToReturn += "  "*max(indent, 0) + "|-" + str(dictionary[i]["id"]) + "\n"
+                stringToReturn += "| "*max(indent, 0) + "|-" + str(dictionary[i]["id"]) + "\n"
     else:
-        stringToReturn += "  "*max(indent, 0) + "|-" + str(dictionary) + "\n"
+        stringToReturn += "| "*max(indent, 0) + "|-" + str(dictionary) + "\n"
     return stringToReturn
 
 
