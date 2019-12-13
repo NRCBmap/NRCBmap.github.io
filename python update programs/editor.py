@@ -37,6 +37,13 @@ def findID(id, listToCheck):
     print("\n\nerror in findID: could not find id '" + str(id) + "' in list:\n" + str(listToCheck) + "\n\n")
     return 0
 
+def makeUnusedID(list):
+    highestId = 0
+    for i in range(len(list)):
+        if int(list[i]["id"]) > highestId:
+            highestId = list[i]["id"]
+    return highestId + 1
+
 def getPath(path):
     if "error" in jsonData:
         return jsonData
@@ -52,6 +59,24 @@ def editPath(path, newVal):
     location = getPath(path[:-1])[path[-1]] = newVal
     return getPath(path)
 
+def addPath(path, idName):
+    nowPath = getPath(path)
+    if isinstance(nowPath, list):
+        nowPath.append({"id":idName})
+        return idName
+    elif isinstance(nowPath, dict):
+        nowPath[idName] = "undefined"
+        return idName
+    else:
+        return False
+
+def deletePath(path):
+    itemRoot = getPath(path[:-1])
+    if isinstance(itemRoot, list):
+        del itemRoot[findID(path[-1])]
+    else:
+        del itemRoot[path[-1]]
+    return itemRoot
 
 path = []
 def getCurrentPath():
@@ -82,7 +107,7 @@ def getStrStructure(dictionary, depth, indent):
     return stringToReturn
 
 
-def cmd_cd(argument):
+def cmd_goto(argument):
     if argument == "..":
         if len(path) == 0:
             return "error: already in root"
@@ -159,7 +184,7 @@ def cmd_edit(argument):
         return "error: only write float, int or str"
     if valToWrite == "error":
         print("waring: something might have gone wrong, but it's not certain. If you tried to write \"error\", everything is fine.")
-    return editPath(path, argument)
+    return editPath(path, valToWrite)
 
 def cmd_tree(argument):
     depth = 0
@@ -176,7 +201,41 @@ def cmd_tree(argument):
     strToReturn += getStrStructure(getCurrentPath(), depth, 0)
     return strToReturn
 
-commands = {"cd":cmd_cd, "findDict":cmd_findDict, "backup":cmd_backup, "edit": cmd_edit, "tree": cmd_tree, "save": saveData}
+def cmd_newUnisedID(argument):
+    if not isinstance(getCurrentPath(), list):
+        return "error: can only do this in lists."
+    if not isinstance(getCurrentPath()[0], dict):
+        return "error: can only do this in lists with dicts."
+    if "id" not in getCurrentPath()[0]:
+        return "error: can only do this in lists with dicts with an id property"
+    return makeUnusedID(getCurrentPath())
+
+def cmd_new(argument):
+    currentPath = getCurrentPath()
+    if not isinstance(currentPath, (dict, list)):
+        return "error: you can only add to dict or list"
+    parArg = "error"
+    try:
+        parArg = eval(argument)
+    except:
+        return "error in eval. Maybe a syntax error"
+    return addPath(path, parArg)
+
+def cmd_del(argument):
+    currentPath = getCurrentPath()
+    if not isinstance(currentPath, (dict, list)):
+        return "error: you can only delete an item of a dict or list"
+    parArg = "error"
+    try:
+        parArg = eval(argument)
+    except:
+        return "error in eval. Possibly a syntax error in argument"
+    if parArg not in currentPath:
+        return "error: " + str(parArg) + " not in current context."
+    deletePath(path + [parArg])
+    return "done."
+
+commands = {"goto":cmd_goto, "findDict":cmd_findDict, "backup":cmd_backup, "edit": cmd_edit, "tree": cmd_tree, "save": saveData, "unusedID": cmd_newUnisedID, "new": cmd_new, "del": cmd_del}
 
 loadData()
 
