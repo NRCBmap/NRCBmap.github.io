@@ -11,6 +11,7 @@ print(jsonData["provinces"])
 
 for i in jsonData["provinces"]:
     i["natOwned"] = 1
+    i["colonyId"] = 1
 
 print(jsonData["provinces"])
 

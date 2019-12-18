@@ -2,6 +2,7 @@ import json
 # import math
 # import random
 import os
+import webbrowser
 
 def backup():
     os.system('python "python update programs\\packup.py"')
@@ -98,14 +99,28 @@ def getStrStructure(dictionary, depth, indent):
     elif isinstance(dictionary, list):
         for i in range(len(dictionary)):
             if depth > 1:
-                stringToReturn += "| "*max(indent, 0) + "|-. " + str(dictionary[i]["id"]) + ": \n"
-                stringToReturn += getStrStructure(dictionary[i], depth-1, indent+1)
+                if "id" in dictionary[i]:
+                    stringToReturn += "| "*max(indent, 0) + "|-. " + str(dictionary[i]["id"]) + ": \n"
+                    stringToReturn += getStrStructure(dictionary[i], depth-1, indent+1)
+                else:
+                    if isinstance(dictionary[i], (str, int, float)):
+                        stringToReturn += "| "*max(indent, 0) + "|- " + str(dictionary[i]) + "\n"
+                    else:
+                        stringToReturn += "| "*max(indent, 0) + "|-. " + str(i) + ": \n"
             else:
-                stringToReturn += "| "*max(indent, 0) + "|-" + str(dictionary[i]["id"]) + "\n"
+                if "id" in dictionary[i]:
+                    stringToReturn += "| "*max(indent, 0) + "|-" + str(dictionary[i]["id"]) + "\n"
+                else:
+                    stringToReturn += "| "*max(indent, 0) + "|-" + str(i) + "\n"
     else:
         stringToReturn += "| "*max(indent, 0) + "|-" + str(dictionary) + "\n"
     return stringToReturn
 
+def getNationInf(id):
+    for i in jsonData['nations']:
+        if i['id'] == id:
+            return i
+    return {'id':0, 'name':'getNationInf error', 'description':'getNationInf error', "discord tag": "getNationInf error"}
 
 def cmd_goto(argument):
     if argument == "..":
@@ -174,14 +189,18 @@ def cmd_backup(argument):
 def cmd_edit(argument):
     currentPath = getCurrentPath()
     if not isinstance(currentPath, (float, int, str)):
-        return "error: execute this command in and float, int or str"
+        print("warning: not editing a float, int or string.")
+        if not input("continue? y/n") == "y":
+            return "cancelled";
     valToWrite = "error"
     try:
         valToWrite = eval(argument)
     except:
         return "error in evaluation of argument. This could be a syntax error in the argument."
     if not isinstance(valToWrite, (float, int, str)):
-        return "error: only write float, int or str"
+        print("warning: not writing a float, int or string.")
+        if not input("continue? y/n") == "y":
+            return "cancelled";
     if valToWrite == "error":
         print("waring: something might have gone wrong, but it's not certain. If you tried to write \"error\", everything is fine.")
     return editPath(path, valToWrite)
@@ -235,23 +254,78 @@ def cmd_del(argument):
     deletePath(path + [parArg])
     return "done."
 
-commands = {"goto":cmd_goto, "findDict":cmd_findDict, "backup":cmd_backup, "edit": cmd_edit, "tree": cmd_tree, "save": saveData, "unusedID": cmd_newUnisedID, "new": cmd_new, "del": cmd_del}
+def cmd_infrastructure(argument):
+    splitArg = argument.split(';');
+    natName = splitArg[0];
+    pr1Id = int(splitArg[1]);
+    pr2Id = int(splitArg[2]);
+    type = splitArg[3];
+    conf = int(splitArg[4]);
+    pr1 = jsonData['provinces'][findID(pr1Id, jsonData['provinces'])]
+    pr2 = jsonData['provinces'][findID(pr2Id, jsonData['provinces'])]
+    if (getNationInf(pr1['natOwned'])['name'] != natName or getNationInf(pr2['natOwned'])['name'] != natName):
+        return "error: province not owned by maker of road."
+    if (pr1Id == pr2Id):
+        return "error: road goes to origin."
+    if (conf != (pr1Id + pr2Id)%7):
+        return "error: invalid conf num. This might be a hack attempt."
+    if (not (type == 'r' or type == 'c' or type == 't')):
+        return "error: invalid road type"
+    for i in jsonData['infrastructure']:
+        if i['pr1'] == pr1Id and i['pr2'] == pr2Id and i['type'] == type:
+            return "error: road already exists with id " + str(i["id"]) + "."
+    newId = makeUnusedID(jsonData['infrastructure'])
+    jsonData['infrastructure'].append({'id':newId, 'type':type, 'pr1': pr1Id, 'pr2': pr2Id})
+    return "Made " + type + " by " + natName + " from " + pr1['name'] + " to " + pr2['name'] + "."
+
+def cmd_reload(argument):
+    if input('are you sure you want to reload? y/n: ') == 'y':
+        loadData()
+        return "reloaded"
+    return "cancelled"
+
+# colonise <provinceId>;<nationId>;<colonyId>;<confnum (sum%7)>
+def cmd_colonise(argument):
+    splitArg = argument.split(";")
+    if len(splitArg) != 4:
+        return "error: wrong number of arguments."
+    for i in range(len(splitArg)):
+        try:
+            splitArg[i] = int(splitArg[i])
+        except Exception as e:
+            return "error: argument #" + str(i) + " is not a number."
+    confnum = (splitArg[0] + splitArg[1] + splitArg[2])%7
+    if confnum != splitArg[3]:
+        return "error: invalid confnum. This might be a hack attempt."
+    province = jsonData["provinces"][findID(splitArg[0], jsonData["provinces"])]
+    nation = jsonData["nations"][findID(splitArg[1], jsonData["nations"])]
+    colony = nation["colonies"][findID(splitArg[2], nation["colonies"])]
+    input("Can " + nation["name"] + " with his colony " + colony["name"] + " colonise to " + province["name"] + "? Press enter to show on map.")
+    webbrowser.open("http://127.0.0.1:8000?script=setCamTo('provinces'," + str(province["id"]) + ')', new=2)
+    yn = "a"
+    while yn != "y" and yn != "n":
+        yn = input("? y/n")
+    if yn == "n":
+        return "cancelled"
+    else:
+        province["natOwned"] = nation["id"]
+        province["colonyId"] = colony["id"]
+        return province["name"] + " is now owned by " + nation["name"] + "(" + nation["discord tag"] + ") in colony " + colony["name"] + "."
+
+commands = {"goto":cmd_goto,
+            "findDict":cmd_findDict,
+            "backup":cmd_backup,
+            "edit": cmd_edit,
+            "tree": cmd_tree,
+            "save": saveData,
+            "unusedID": cmd_newUnisedID,
+            "new": cmd_new,
+            "del": cmd_del,
+            "infrastructure":cmd_infrastructure,
+            "reload":cmd_reload,
+            "colonise":cmd_colonise}
 
 loadData()
-
-# print(getStrStructure(jsonData, 1, 0))
-# print(getStrStructure(jsonData, 2, 0))
-# print(getStrStructure(jsonData, 3, 0))
-# print(getStrStructure(jsonData, 4, 0))
-
-# for i in jsonData.keys():
-#     print(i)
-
-# print(jsonData)
-
-# print(getPath(["states",2]))
-
-# print(getPathStr(["continents", 1, "name"]))
 
 while True:
     pathString = "data"

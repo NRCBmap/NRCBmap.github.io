@@ -1,5 +1,13 @@
 var mapImg;
 
+function getUrlVars() {
+    var vars = {};
+    var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
+        vars[key] = value;
+    });
+    return vars;
+}
+
 // type = string continents, states or provinces
 function findID(type, id) {
   for (var i = 0; i < stateData[type].length; i++) {
@@ -52,8 +60,38 @@ function getThingsInDist(type, x, y, maxDist) {
 }
 
 var selectedId = 0;
+var attentionIds = [];
 var zoomType = 0;
 function renderContinentNames() {
+  if (zoomType == 2) {
+    for (var i = 0; i < stateData.infrastructure.length; i++) {
+      var pr1 = findID('provinces', stateData.infrastructure[i].pr1);
+      var pr2 = findID('provinces', stateData.infrastructure[i].pr2);
+
+      if (checkOnScreen(pr1.x, pr1.y) || checkOnScreen(pr2.x, pr2.y)) {
+        var moveFac = 0
+        if (stateData.infrastructure[i].type == 'r') { // road
+          stroke(150, 70, 0, 127);
+        } else if (stateData.infrastructure[i].type == 'c') {// canal
+          stroke(0, 127, 255, 127);
+          moveFac = 1;
+        } else { // railroad
+          stroke(127, 127);
+          moveFac = -1;
+        }
+        var xFac1 = (pr1.name.length/1.5)+1;
+        var xFac2 = (pr2.name.length/1.5)+1;
+        var yFac = 1.5;
+        var dir = -atan2(pr2.x-pr1.x, pr2.y-pr1.y);
+        strokeWeight(1);
+        line(pr1.x+(sin(-dir)*xFac1)+(cos(dir)*moveFac)-0.5,
+             pr1.y+(cos(-dir)*yFac )+(sin(dir)*moveFac)-0.5,
+             pr2.x-(sin(-dir)*xFac2)+(cos(dir)*moveFac)-0.5,
+             pr2.y-(cos(-dir)*yFac )+(sin(dir)*moveFac)-0.5);
+      }
+    }
+  }
+
   var infoText = "";
   stroke(0);
   textAlign(CENTER,CENTER);
@@ -64,7 +102,9 @@ function renderContinentNames() {
     textSize(CONTINENT_TEXT_SIZE);
     strokeWeight(CONTINENT_TEXT_SIZE/5);
     for (var i = 0; i < stateData.continents.length; i++) {
-      if (stateData.continents[i].id == selectedId) {
+      if (attentionIds.includes("continents;" + stateData.continents[i].id.toString())) {
+        fill(0,127,255);
+      } else if (stateData.continents[i].id == selectedId) {
         fill(0,255,0);
       } else {
         fill(255);
@@ -80,7 +120,9 @@ function renderContinentNames() {
     textSize(STATE_TEXT_SIZE);
     strokeWeight(STATE_TEXT_SIZE/5);
     for (var i = 0; i < stateData.states.length; i++) {
-      if (stateData.states[i].id == selectedId) {
+      if (attentionIds.includes("states;" + stateData.states[i].id.toString())) {
+        fill(0,127,255);
+      } else if (stateData.states[i].id == selectedId) {
         fill(0,255,0);
       } else {
         fill(255);
@@ -97,12 +139,16 @@ function renderContinentNames() {
     textSize(PROVINCE_TEXT_SIZE);
     strokeWeight(PROVINCE_TEXT_SIZE/5);
     for (var i = 0; i < stateData.provinces.length; i++) {
-      if (stateData.provinces[i].id == selectedId) {
-        fill(0,255,0);
-      } else {
-        fill(255);
+      if (checkOnScreen(stateData.provinces[i].x, stateData.provinces[i].y)) {
+        if (attentionIds.includes("provinces;" + stateData.provinces[i].id.toString())) {
+          fill(0,127,255);
+        } else if (stateData.provinces[i].id == selectedId) {
+          fill(0,255,0);
+        } else {
+          fill(255);
+        }
+        text(stateData.provinces[i].name, stateData.provinces[i].x, stateData.provinces[i].y)
       }
-      text(stateData.provinces[i].name, stateData.provinces[i].x, stateData.provinces[i].y)
     }
     var province = findClose("provinces", onMapMousePos[0], onMapMousePos[1]);
     selectedId = province.id;
@@ -134,7 +180,63 @@ function extraInfo(type, id) {
       } else if (key == "parentID") {
         betterValue = value.toString() + " (" + findID(conStaProNames[type-1], value).name + ")";
       } else if (key == "natOwned") {
-        betterValue = value.toString() + " (" + getNationInf(value).name + ")";
+        betterValue = getNationInf(value).name + "\n";
+        betterValue += " - " + getNationInf(value).description + "\n";
+        betterValue += " - " + getNationInf(value)["discord tag"];
+      } else if (key == "colonyId") {
+        for (var i = 0; i < getNationInf(province.natOwned).colonies.length; i++) {
+          if (getNationInf(province.natOwned).colonies[i].id == province.colonyId) {
+            betterValue = getNationInf(province.natOwned).colonies[i].name;
+            break;
+          }
+        }
+      }
+      infoText += betterValue.toString() + "\n"
+    }
+    infoText += "infrastructure:\n";
+    for (var i = 0; i < stateData.infrastructure.length; i++) {
+      var nowR = stateData.infrastructure[i]
+      var otherId = false;
+      if (nowR.pr1 == id) {
+        otherId = nowR.pr2;
+      } else if (nowR.pr2 == id) {
+        otherId = nowR.pr1;
+      }
+      if (otherId) {
+        infoText += ' - '
+        if (nowR.type == 'r') { // road
+          infoText += 'Road';
+        } else if (nowR.type == 'c') { // canal
+          infoText += 'Canal';
+        } else {
+          infoText += 'Railroad';
+        }
+        infoText += ' to ' + findID('provinces', otherId).name + '\n';
+      }
+    }
+    alert(infoText);
+  } else if (type == 1) {
+    var state = findID(conStaProNames[type], id);
+    var infoText = "Here is some info about " + state.name + ":\n";
+    for (const [key, value] of Object.entries(state)) {
+      infoText += key + ": ";
+      var betterValue = value;
+      if (key == "x" || key == "y") {
+        betterValue = round(value*100)/100
+      } else if (key == "parentID") {
+        betterValue = value.toString() + " (" + findID(conStaProNames[type-1], value).name + ")";
+      }
+      infoText += betterValue.toString() + "\n"
+    }
+    alert(infoText);
+  } else if (type == 0) {
+    var continent = findID(conStaProNames[type], id);
+    var infoText = "Here is some info about " + continent.name + ":\n";
+    for (const [key, value] of Object.entries(continent)) {
+      infoText += key + ": ";
+      var betterValue = value;
+      if (key == "x" || key == "y") {
+        betterValue = round(value*100)/100
       }
       infoText += betterValue.toString() + "\n"
     }
@@ -173,10 +275,43 @@ function infrastructure(id1) {
       tempMouseReleased = undefined;
       return;
     }
-    var actionCode = "infrastructure;" + getNationInf(findID("provinces", infrastructureId1).natOwned).name + ";" + infrastructureId1.toString() + ";" + infrastructureId2.toString() + ";" + infrastructureType + ";" + ((infrastructureId1+infrastructureId2)%7).toString();
+    var actionCode = "infrastructure " + getNationInf(findID("provinces", infrastructureId1).natOwned).name + ";" + infrastructureId1.toString() + ";" + infrastructureId2.toString() + ";" + infrastructureType + ";" + ((infrastructureId1+infrastructureId2)%7).toString();
     prompt("copy this code in the #nrmap-codes channel in the discord server.", actionCode)
     tempMouseReleased = undefined;
   }
+}
+
+function colonise(provinceID) {
+  var nationColonising = userFindNation();
+  var colonyId = false;
+  while (!colonyId) {
+    var promptText = "Give the colony name. Press space and select make colony to make a new colony.\nyour colonies:\n";
+    for (var i = 0; i < nationColonising.colonies.length; i++) {
+      promptText += " - " + nationColonising.colonies[i].name + "\n";
+    }
+    var colonyName = prompt(promptText, "main");
+    if (!colonyName) {
+      alert("cancelled");
+      return
+    }
+    for (var i = 0; i < nationColonising.colonies.length; i++) {
+      if (nationColonising.colonies[i].name == colonyName) {
+        colonyId = nationColonising.colonies[i].id;
+        break;
+      }
+    }
+    if (!colonyId) {
+      alert("could not find that colony. Check the spelling.")
+    }
+  }
+  var provinceColonised = findID('provinces', provinceID);
+  var cmdText = "colonise ";
+  // colonise <provinceId>;<nationId>;<colonyId>;<confnum (sum%7)>
+  cmdText += provinceColonised.id.toString() + ";";
+  cmdText += nationColonising.id.toString() + ";";
+  cmdText += colonyId.toString() + ";";
+  cmdText += ((provinceColonised.id + nationColonising.id + colonyId)%7).toString();
+  prompt("Paste this in #nrmap-codes", cmdText);
 }
 
 function makeName() {
@@ -215,29 +350,87 @@ function setup() { // p5 setup
   noLoop();
   strokeJoin(ROUND)
 
+  if (getUrlVars().script != undefined) {
+    eval(decodeURIComponent(getUrlVars().script));
+  }
+
   redraw();
 }
 
+function userFindNation(){
+  var nation = false;
+  while (!nation) {
+    var natName = prompt("Give the name, #id or discord name of the nation.");
+    for (var i = 0;i < stateData.nations.length;i++) {
+      if (stateData.nations[i].name == natName || parseInt(stateData.nations[i].id) == natName || stateData.nations[i]["discord tag"] == natName) {
+        nation = stateData.nations[i]
+      }
+    }
+  }
+  return nation
+}
+
+function alertNatInf(province) {
+  if (province == "#search") {
+    var nation = userFindNation();
+  } else {
+    var nation = getNationInf(findID('provinces', province).natOwned);
+  }
+  var infoText = "Here is some info about " + nation.name + ". On the bottom there are some options for extra info.\n"
+  for (const [key, value] of Object.entries(nation)) {
+    if (key == "colonies") {
+      infoText += "colony names:\n";
+      for (var i = 0; i < value.length; i++) {
+        infoText += " - " + value[i].name + "\n";
+      }
+    } else {
+      infoText += key + ": " + value.toString() + "\n";
+    }
+  }
+  infoText += "options:\n1: goto capital"
+  option = parseInt(prompt(infoText));
+  if (!isNaN(option)) {
+    if (option == 1) {
+      alert("still being made.......")
+    }
+  }
+}
+
+function options() {
+  var input = prompt("What do you want to do?\n1: get info about a nation");
+  if (input == "1") {
+    alertNatInf("#search")
+  }
+}
+
 function keyPressed() {
-  // if (keyCode === 32) {
-  //   var name = prompt("name", makeName())
-  //   if (name) {
-  //     var type = parseInt(prompt("type",2))
-  //     var parentstr = "parentID: \n"
-  //     for (var i = 0; i < stateData[conStaProNames[type-1]].length; i++) {
-  //       parentstr += stateData[conStaProNames[type-1]][i].name + ": " + stateData[conStaProNames[type-1]][i].id.toString() + "\n";
-  //     }
-  //     var parent = prompt(parentstr,10)
-  //     stateData[conStaProNames[type]].push({"name":name, "x":onMapMousePos[0], "y":onMapMousePos[1], "id":stateData[conStaProNames[type]].length, "parentID":parseInt(parent), "natOwned": 1})
-  //     newStuffText += ',{"name":"' + name + '","x":' + onMapMousePos[0].toString() + ',"y":' + onMapMousePos[1].toString() + ',"id":' + stateData[conStaProNames[type]].length.toString() + ',"parentID":'+ parent + ',"natOwned": 1}'
-  //     console.log(newStuffText);
-  //   }
-  // }
+  if (keyCode == 32) {
+    options();
+  }
+  if (keyCode === 78) { // n
+    var name = prompt("name", makeName())
+    if (name) {
+      var type = parseInt(prompt("type",2))
+      var parentstr = "parentID: \n"
+      for (var i = 0; i < stateData[conStaProNames[type-1]].length; i++) {
+        parentstr += stateData[conStaProNames[type-1]][i].name + ": " + stateData[conStaProNames[type-1]][i].id.toString() + "\n";
+      }
+      var parent = prompt(parentstr,10)
+      stateData[conStaProNames[type]].push({"name":name, "x":onMapMousePos[0], "y":onMapMousePos[1], "id":stateData[conStaProNames[type]].length, "parentID":parseInt(parent), "natOwned": 1})
+      newStuffText += ',{"name":"' + name + '","x":' + onMapMousePos[0].toString() + ',"y":' + onMapMousePos[1].toString() + ',"id":' + stateData[conStaProNames[type]].length.toString() + ',"parentID":'+ parent + ',"natOwned": 1}'
+      console.log(newStuffText);
+    }
+  }
 }
 
 var camX = 250;
 var camY = 300;
 var zoom = 0.2;
+
+var goalCamX = 0;
+var goalCamY = 0;
+var goalZoom = 1;
+var movingToGoal = false;
 
 var dragStartX;
 var dragStartY;
@@ -257,6 +450,7 @@ function mousePressed() {
   dragStartCamX = camX;
   dragStartCamY = camY;
   dragCount = 0;
+  movingToGoal = false;
   redraw();
 }
 
@@ -273,25 +467,46 @@ function mouseReleased() {
   if (dragCount < 5) {
     if (tempMouseReleased != undefined) {
       tempMouseReleased();
-    } else if (zoomType = 2) {
-      var selectedOption = parseInt(prompt("What do you want to do? Tye the number of the option.\n1: extra info\n2: build infrastructure"));
+    } else if (zoomType == 2) {
+      var selectedOption = parseInt(prompt("What do you want to do? Tye the number of the option.\n1: extra info\n2: build infrastructure.\n3: get nation info.\n4: colonise"));
       if (isNaN(selectedOption)) {
         alert("That was not a number");
       } else if (selectedOption == 1) {
         extraInfo(zoomType, selectedId);
       } else if (selectedOption == 2) {
         infrastructure(selectedId);
+      } else if (selectedOption == 3) {
+        alertNatInf(selectedId);
+      } else if (selectedOption == 4) {
+        colonise(selectedId);
+      }
+    } else if (zoomType == 1) {
+      var selectedOption = parseInt(prompt("What do you want to do? Tye the number of the option.\n1: extra info"));
+      if (isNaN(selectedOption)) {
+        alert("That was not a number");
+      } else if (selectedOption == 1) {
+        extraInfo(zoomType, selectedId);
+      }
+    } else if (zoomType == 0) {
+      var selectedOption = parseInt(prompt("What do you want to do? Tye the number of the option.\n1: extra info"));
+      if (isNaN(selectedOption)) {
+        alert("That was not a number");
+      } else if (selectedOption == 1) {
+        extraInfo(zoomType, selectedId);
       }
     }
   }
 }
 
 function mouseMoved() {
-  redraw();
+  if (!movingToGoal) {
+    redraw();
+  }
 }
 
 function mouseWheel(event) {
   // console.log(event.delta);
+  movingToGoal = false;
   if (event.delta > 0) {
     if (zoom > 0.1) {
       var factor = 1-(event.delta/500)
@@ -313,21 +528,70 @@ function mouseWheel(event) {
   return false;
 }
 
+function windowResized() {
+  var xScreenSize = innerWidth - 5;
+  var yScreenSize = innerHeight - 5;
+  resizeCanvas(xScreenSize, yScreenSize);
+}
+
 function getOnMapPos(x,y) {
   return ([(-camX+x)/zoom, (-camY+y)/zoom]);
 }
 
+function getOnScreenPos(x,y) {
+  return ([(x*zoom)+camX, (y*zoom)+camY]);
+}
+
+function checkOnScreen(x,y) {
+  var onScreenPos = getOnScreenPos(x,y);
+  return (onScreenPos[0]>=0 && onScreenPos[0]<width && onScreenPos[1]>=0 && onScreenPos[1]<height);
+}
+
+function doCamMove() {
+  if (movingToGoal) {
+    camX -= (camX-goalCamX)/50;
+    camY -= (camY-goalCamY)/50;
+    zoom -= (zoom-goalZoom)/50;
+    if (abs(camX-goalCamX)*zoom < 0.1 && abs(camY-goalCamY)*zoom < 0.1 && abs(zoom-goalZoom) < 0.01) {
+      movingToGoal = false;
+    }
+  } else {
+    noLoop();
+  }
+}
+
+function setCamTo(type, id) {
+  if (type == 'provinces') {
+    goalZoom = 15;
+  } else if (type == 'states') {
+    goalZoom = 4.9;
+  } else {
+    goalZoom = 0.5
+  }
+  var tempZoom = zoom;
+  zoom = goalZoom;
+  var onScreenPos = getOnScreenPos(findID(type, id).x, findID(type, id).y)
+  goalCamX = camX - (onScreenPos[0]-(width/2));
+  goalCamY = camY - (onScreenPos[1]-(height/2));
+  zoom = tempZoom;
+  movingToGoal = true;
+  attentionIds = [type.toString() + ";" + id.toString()]
+  loop();
+}
+
 function draw() {
   onMapMousePos = getOnMapPos(mouseX, mouseY);
+  doCamMove();
   background(68,107,164);
   translate(camX, camY);
   scale(zoom);
   image(mapImg,0,0);
-  // console.log(zoom);
   renderContinentNames();
-  fill(0);
-  noStroke();
-  ellipse(onMapMousePos[0], onMapMousePos[1], 20/zoom, 20/zoom);
+
+  // fill(0);
+  // noStroke();
+  // ellipse(onMapMousePos[0], onMapMousePos[1], 5/zoom, 5/zoom);
+
   // if (zoomType == 2) {
   //   var province = findID("provinces", selectedId);
   //   noFill();
