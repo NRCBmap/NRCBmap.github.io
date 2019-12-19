@@ -312,6 +312,24 @@ def cmd_colonise(argument):
         province["colonyId"] = colony["id"]
         return province["name"] + " is now owned by " + nation["name"] + "(" + nation["discord tag"] + ") in colony " + colony["name"] + "."
 
+discAllowedCMDs = ["infrastructure", "colonise"]
+def cmd_impDiscord(argument):
+    line = ""
+    lines = []
+    while line != "/done72":
+        line = input("/done72 when you are done.> ")
+        lines.append(line)
+    print("Executing " + str(len(lines)) + " commands...")
+    for i in range(len(lines)):
+        cmd = lines[i].split(" ", 1)
+        if cmd[0] in discAllowedCMDs:
+            print("Allowing \"" + lines[i] + "\".")
+            print(commands[cmd[0]](cmd[1]))
+        else:
+            print("Not allowing \"" + lines[i] + "\".")
+    return "Done. Don't forget to save!"
+
+
 commands = {"goto":cmd_goto,
             "findDict":cmd_findDict,
             "backup":cmd_backup,
@@ -323,7 +341,8 @@ commands = {"goto":cmd_goto,
             "del": cmd_del,
             "infrastructure":cmd_infrastructure,
             "reload":cmd_reload,
-            "colonise":cmd_colonise}
+            "colonise":cmd_colonise,
+            "impDiscord":cmd_impDiscord}
 
 loadData()
 

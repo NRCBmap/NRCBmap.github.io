@@ -283,6 +283,10 @@ function infrastructure(id1) {
 
 function colonise(provinceID) {
   var nationColonising = userFindNation();
+  if (!nationColonising) {
+    alert("cancelled");
+    return
+  }
   var colonyId = false;
   while (!colonyId) {
     var promptText = "Give the colony name. Press space and select make colony to make a new colony.\nyour colonies:\n";
@@ -311,6 +315,7 @@ function colonise(provinceID) {
   cmdText += nationColonising.id.toString() + ";";
   cmdText += colonyId.toString() + ";";
   cmdText += ((provinceColonised.id + nationColonising.id + colonyId)%7).toString();
+  cmdText += "\nhttps://codemaker4.github.io/NRCBmap/?script=setCamToThing('provinces'," + provinceColonised.id.toString() + ");"
   prompt("Paste this in #nrmap-codes", cmdText);
 }
 
@@ -361,6 +366,9 @@ function userFindNation(){
   var nation = false;
   while (!nation) {
     var natName = prompt("Give the name, #id or discord name of the nation.");
+    if (!natName) {
+      return false;
+    }
     for (var i = 0;i < stateData.nations.length;i++) {
       if (stateData.nations[i].name == natName || parseInt(stateData.nations[i].id) == natName || stateData.nations[i]["discord tag"] == natName) {
         nation = stateData.nations[i]
@@ -373,6 +381,10 @@ function userFindNation(){
 function alertNatInf(province) {
   if (province == "#search") {
     var nation = userFindNation();
+    if (!nation) {
+      alert("cancelled");
+      return
+    }
   } else {
     var nation = getNationInf(findID('provinces', province).natOwned);
   }
@@ -397,9 +409,13 @@ function alertNatInf(province) {
 }
 
 function options() {
-  var input = prompt("What do you want to do?\n1: get info about a nation");
+  var input = prompt("What do you want to do?\n1: get info about a nation\n2: share location");
   if (input == "1") {
     alertNatInf("#search")
+  } else if (input == "2") {
+    shareLoc();
+  } else {
+    alert("That was not an option.")
   }
 }
 
@@ -508,7 +524,7 @@ function mouseWheel(event) {
   // console.log(event.delta);
   movingToGoal = false;
   if (event.delta > 0) {
-    if (zoom > 0.1) {
+    if (zoom > 0.02) {
       var factor = 1-(event.delta/500)
       zoom = zoom * factor
       camX = (camX-mouseX) * factor + mouseX
@@ -560,23 +576,64 @@ function doCamMove() {
   }
 }
 
-function setCamTo(type, id) {
-  if (type == 'provinces') {
-    goalZoom = 15;
-  } else if (type == 'states') {
-    goalZoom = 4.9;
-  } else {
-    goalZoom = 0.5
-  }
+function shareLoc() {
+  var newX = (-camX/zoom) + (width/zoom/2);
+  console.log(newX, camX, width, zoom);
+  var newY = (-camY/zoom) + (height/zoom/2);
+  console.log(newY, camY);
+  prompt("Share this link to automatically go to the same location:", "codemaker4.github.io/NRCBmap/?script=setCamTo(" + newX.toString() + "," + newY.toString() + "," + zoom.toString() + ")");
+}
+
+function setCamTo(newX,newY,newZoom) {
   var tempZoom = zoom;
-  zoom = goalZoom;
-  var onScreenPos = getOnScreenPos(findID(type, id).x, findID(type, id).y)
+  zoom = newZoom;
+  var onScreenPos = getOnScreenPos(newX, newY);
   goalCamX = camX - (onScreenPos[0]-(width/2));
   goalCamY = camY - (onScreenPos[1]-(height/2));
   zoom = tempZoom;
+  goalZoom = newZoom;
   movingToGoal = true;
-  attentionIds = [type.toString() + ";" + id.toString()]
   loop();
+}
+
+function setCamToThing(type, id) {
+  if (type == 'provinces') {
+    var newZoom = 15;
+  } else if (type == 'states') {
+    var newZoom = 4.9;
+  } else if (type == 'continents'){
+    var newZoom = 0.5
+  } else if (type == 'infrastructure') {
+    var newZoom = 10;
+  }
+  if (type == 'provinces' || type == 'states' || type == 'continents') {
+    setCamTo(findID(type, id).x, findID(type, id).y, newZoom)
+    // var tempZoom = zoom;
+    // zoom = goalZoom;
+    // var onScreenPos = getOnScreenPos(findID(type, id).x, findID(type, id).y)
+    // goalCamX = camX - (onScreenPos[0]-(width/2));
+    // goalCamY = camY - (onScreenPos[1]-(height/2));
+    // zoom = tempZoom;
+    // movingToGoal = true;
+    attentionIds = [type.toString() + ";" + id.toString()]
+    // loop();
+  } else if (type == 'infrastructure') {
+    // var tempZoom = zoom;
+    // zoom = goalZoom;
+    var infrastructure = findID('infrastructure', id);
+    var pr1 = findID('provinces', infrastructure.pr1);
+    var pr2 = findID('provinces', infrastructure.pr2);
+    setCamTo((pr1.x + pr2.x)/2, (pr1.y + pr2.y)/2, newZoom);
+    // var onScreenPos1 = getOnScreenPos(findID('provinces', pr1Id).x, findID('provinces', pr1Id).y);
+    // var onScreenPos2 = getOnScreenPos(findID('provinces', pr2Id).x, findID('provinces', pr2Id).y);
+    // var onScreenPos = [(onScreenPos1[0] + onScreenPos2[0])/2, (onScreenPos1[1] + onScreenPos2[1])/2];
+    // goalCamX = camX - (onScreenPos[0]-(width/2));
+    // goalCamY = camY - (onScreenPos[1]-(height/2));
+    // zoom = tempZoom;
+    // movingToGoal = true;
+    attentionIds = ["provinces;" + pr1.id.toString(), "provinces;" + pr2.id.toString()]
+    // loop();
+  }
 }
 
 function draw() {
