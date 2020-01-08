@@ -122,6 +122,14 @@ def getNationInf(id):
             return i
     return {'id':0, 'name':'getNationInf error', 'description':'getNationInf error', "discord tag": "getNationInf error"}
 
+def findUserName(text):
+    foundTags = []
+    for i in jsonData['nations']:
+        nowTag = i['discord tag']
+        if nowTag in text:
+            foundTags.append(nowTag)
+    return foundTags
+
 def cmd_goto(argument):
     if argument == "..":
         if len(path) == 0:
@@ -274,6 +282,11 @@ def cmd_infrastructure(argument):
     for i in jsonData['infrastructure']:
         if i['pr1'] == pr1Id and i['pr2'] == pr2Id and i['type'] == type:
             return "error: road already exists with id " + str(i["id"]) + "."
+    x = str((pr1.x+pr2.x)/2)
+    y = str((pr1.y+pr2.y)/2)
+    webbrowser.open("http://127.0.0.1:8000?script=setCamTo(" + x + "," + y + ",15);", new=2)
+    if input("is this OK? y/n") == "n":
+        return "error: road not approved by admin. Reason: " + input("give reason: ")
     newId = makeUnusedID(jsonData['infrastructure'])
     jsonData['infrastructure'].append({'id':newId, 'type':type, 'pr1': pr1Id, 'pr2': pr2Id})
     return "Made " + type + " by " + natName + " from " + pr1['name'] + " to " + pr2['name'] + "."
@@ -301,12 +314,12 @@ def cmd_colonise(argument):
     nation = jsonData["nations"][findID(splitArg[1], jsonData["nations"])]
     colony = nation["colonies"][findID(splitArg[2], nation["colonies"])]
     input("Can " + nation["name"] + " with his colony " + colony["name"] + " colonise to " + province["name"] + "? Press enter to show on map.")
-    webbrowser.open("http://127.0.0.1:8000?script=setCamTo('provinces'," + str(province["id"]) + ')', new=2)
+    webbrowser.open("http://127.0.0.1:8000?script=setCamToThing('provinces'," + str(province["id"]) + ')', new=2)
     yn = "a"
     while yn != "y" and yn != "n":
         yn = input("? y/n")
     if yn == "n":
-        return "cancelled"
+        return "error: not approved by admin. Reason: " + input("give a reason: ")
     else:
         province["natOwned"] = nation["id"]
         province["colonyId"] = colony["id"]
@@ -320,13 +333,27 @@ def cmd_impDiscord(argument):
         line = input("/done72 when you are done.> ")
         lines.append(line)
     print("Executing " + str(len(lines)) + " commands...")
+    currentTag = "@error"
+    messagesToSend = ["Map updated. Here are some messages:"]
     for i in range(len(lines)):
         cmd = lines[i].split(" ", 1)
         if cmd[0] in discAllowedCMDs:
             print("Allowing \"" + lines[i] + "\".")
-            print(commands[cmd[0]](cmd[1]))
+            commandRes = commands[cmd[0]](cmd[1])
+            if commandRes[:6] == "error:":
+                messagesToSend.append(currentTag + " an error occured on your command \"" + lines[i] + "\": " + commandRes)
+            else:
+                messagesToSend.append(currentTag[:1] + " result of command \"" + lines[i] + "\": " + commandRes)
+            print(commandRes)
         else:
             print("Not allowing \"" + lines[i] + "\".")
+            userNamesFound = findUserName("@" + lines[i])
+            if len(userNamesFound) == 1:
+                currentTag = userNamesFound[0]
+    print("")
+    for i in messagesToSend:
+        print(i)
+    print("")
     return "Done. Don't forget to save!"
 
 
