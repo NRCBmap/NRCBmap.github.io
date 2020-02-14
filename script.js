@@ -636,28 +636,23 @@ function setCamToThing(type, id) {
   }
 }
 
+var drawState = 0; // 0= statemap, 1= research
+
 function draw() {
   onMapMousePos = getOnMapPos(mouseX, mouseY);
   doCamMove();
   background(68,107,164);
   translate(camX, camY);
   scale(zoom);
-  image(mapImg,0,0);
-  renderContinentNames();
+  if (drawState == 0) {
+    image(mapImg,0,0);
+    renderContinentNames();
+  } else if (drawState == 1) {
+    background(0);
+  }
 
   // fill(0);
   // noStroke();
   // ellipse(onMapMousePos[0], onMapMousePos[1], 5/zoom, 5/zoom);
 
-  // if (zoomType == 2) {
-  //   var province = findID("provinces", selectedId);
-  //   noFill();
-  //   stroke(0);
-  //   strokeWeight(1);
-  //   ellipse(province.x, province.y, 20*2, 20*2);
-  //   var things = getThingsInDist("provinces", province.x, province.y, 20);
-  //   for (var i = 0; i < things.length; i++) {
-  //     line(things[i].x, things[i].y, province.x, province.y);
-  //   }
-  // }
 }

@@ -99,7 +99,7 @@ def getStrStructure(dictionary, depth, indent):
     elif isinstance(dictionary, list):
         for i in range(len(dictionary)):
             if depth > 1:
-                if "id" in dictionary[i]:
+                if isinstance(dictionary[i], dict) and "id" in dictionary[i]:
                     stringToReturn += "| "*max(indent, 0) + "|-. " + str(dictionary[i]["id"]) + ": \n"
                     stringToReturn += getStrStructure(dictionary[i], depth-1, indent+1)
                 else:
@@ -237,7 +237,7 @@ def cmd_newUnisedID(argument):
         return "error: can only do this in lists with dicts with an id property"
     return makeUnusedID(getCurrentPath())
 
-def cmd_new(argument):
+def cmd_newDict(argument):
     currentPath = getCurrentPath()
     if not isinstance(currentPath, (dict, list)):
         return "error: you can only add to dict or list"
@@ -247,6 +247,21 @@ def cmd_new(argument):
     except:
         return "error in eval. Maybe a syntax error"
     return addPath(path, parArg)
+
+def cmd_newItem(argument):
+    currentPath = getCurrentPath()
+    if not isinstance(currentPath, (dict, list)):
+        return "error: you can only add to dict or list"
+    parArg = "error"
+    try:
+        parArg = eval(argument)
+    except:
+        return "error in eval. Maybe a syntax error"
+    if isinstance(currentPath, list):
+        currentPath.append(parArg)
+        return parArg
+    else:
+        return "error: can only add to list. use newDict to add to a dict."
 
 def cmd_del(argument):
     currentPath = getCurrentPath()
@@ -364,7 +379,8 @@ commands = {"goto":cmd_goto,
             "tree": cmd_tree,
             "save": saveData,
             "unusedID": cmd_newUnisedID,
-            "new": cmd_new,
+            "newDict": cmd_newDict,
+            "newItem": cmd_newItem,
             "del": cmd_del,
             "infrastructure":cmd_infrastructure,
             "reload":cmd_reload,
