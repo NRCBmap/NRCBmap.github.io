@@ -420,7 +420,7 @@ function options() {
 }
 
 function keyPressed() {
-  if (keyCode == 32) {
+  if (keyCode === 32) {
     options();
   }
   if (keyCode === 78) { // n
@@ -644,10 +644,10 @@ function draw() {
   background(68,107,164);
   translate(camX, camY);
   scale(zoom);
-  if (drawState == 0) {
+  if (drawState === 0) {
     image(mapImg,0,0);
     renderContinentNames();
-  } else if (drawState == 1) {
+  } else if (drawState === 1) {
     background(0);
   }
 
