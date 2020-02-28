@@ -57,7 +57,7 @@ def getPath(path):
     return nowSelection
 
 def editPath(path, newVal):
-    location = getPath(path[:-1])[path[-1]] = newVal
+    getPath(path[:-1])[path[-1]] = newVal
     return getPath(path)
 
 def addPath(path, idName):
@@ -239,8 +239,8 @@ def cmd_newUnisedID(argument):
 
 def cmd_newDict(argument):
     currentPath = getCurrentPath()
-    if not isinstance(currentPath, (dict, list)):
-        return "error: you can only add to dict or list"
+    if not isinstance(currentPath, dict):
+        return "error: you can only add to dict"
     parArg = "error"
     try:
         parArg = eval(argument)
@@ -251,17 +251,14 @@ def cmd_newDict(argument):
 def cmd_newItem(argument):
     currentPath = getCurrentPath()
     if not isinstance(currentPath, (dict, list)):
-        return "error: you can only add to dict or list"
+        return "error: can only add to list. use newDict to add to a dict"
     parArg = "error"
     try:
         parArg = eval(argument)
     except:
         return "error in eval. Maybe a syntax error"
-    if isinstance(currentPath, list):
-        currentPath.append(parArg)
-        return parArg
-    else:
-        return "error: can only add to list. use newDict to add to a dict."
+    currentPath.append(parArg)
+    return parArg
 
 def cmd_del(argument):
     currentPath = getCurrentPath()

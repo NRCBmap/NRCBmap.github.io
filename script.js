@@ -343,7 +343,8 @@ function makeName() {
 }
 
 function preload() {
-  mapImg = loadImage('Map.png');
+  // mapImg = loadImage('Map.png');
+  mapImg = loadImage('mapGen/random/ColoProv_0.png');
 }
 
 function setup() { // p5 setup
